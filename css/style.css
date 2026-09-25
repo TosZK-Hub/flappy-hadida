@@ -1,0 +1,91 @@
+@font-face {
+  font-family: "Lilita One";
+  src: url("../assets/LilitaOne-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Anton";
+  src: url("../assets/Anton-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #063024;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+  cursor: pointer;
+}
+
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #ffb36a 0%, #6b3fa0 48%, #1e3a5f 78%, #063024 100%);
+  transition: opacity 220ms ease;
+}
+
+.splash-card {
+  text-align: center;
+  color: #fff8ec;
+  font-family: "Lilita One", sans-serif;
+}
+
+.splash-card strong {
+  display: block;
+  font-size: 42px;
+  letter-spacing: 0.04em;
+  font-weight: 400;
+}
+
+.splash-card span {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+#splash.is-gone {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
