@@ -8,7 +8,7 @@ Canvas volumetric cartoon. No WebGL. Soft-currency chests only.
 
 [https://toszk-hub.github.io/flappy-hadida/](https://toszk-hub.github.io/flappy-hadida/)
 
-GitHub Pages publishes `main` from the repository root.
+The playable is on `main` and is meant to be served from `/` (root). Publishing needs a repository admin to open Settings → Pages and choose Deploy from a branch, `main`, `/ (root)`. Creating that site from this token returned 403: GitHub requires `pages=write` and `administration=write`.
 
 ```bash
 git clone https://github.com/TosZK-Hub/flappy-hadida.git
