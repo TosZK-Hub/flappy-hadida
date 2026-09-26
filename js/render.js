@@ -718,128 +718,327 @@
     pathRound(ctx, x, y, w, h, Math.min(8, h / 2));
   }
 
-  function drawDisc(ctx, motif, x, y, w, h, i) {
+  function paintBraaiDrum(ctx, x, y, w, h) {
+    const cy = y + h * 0.46;
+    ctx.fillStyle = "#C4783A";
+    ctx.fillRect(x, y, 6, h);
+    ctx.fillRect(x + w - 6, y, 6, h);
+    ctx.fillStyle = "#6B3A1F";
+    ctx.fillRect(x + 6, y, 2.4, h);
+    ctx.fillRect(x + w - 8.4, y, 2.4, h);
+    const hoop = Math.min(3.4, h * 0.22);
+    ctx.fillStyle = "#A85A28";
+    ctx.fillRect(x + 6, y + h * 0.16, w - 12, hoop);
+    ctx.fillStyle = "rgba(255, 248, 236, 0.32)";
+    ctx.fillRect(x + 14, y + 1.4, w * 0.22, Math.min(3.2, h * 0.2));
+    if (h >= 10 && w > 36) {
+      const n = 4;
+      const rx = 3.6;
+      const ry = Math.min(2.7, h * 0.16);
+      for (let k = 0; k < n; k++) {
+        const vx = x + 18 + k * ((w - 36) / (n - 1));
+        ctx.fillStyle = "#8A4A22";
+        ctx.beginPath();
+        ctx.ellipse(vx, cy, rx + 1.15, ry + 0.85, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#0E0C0A";
+        ctx.beginPath();
+        ctx.ellipse(vx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    const emberTop = y + h * 0.68;
+    const ember = ctx.createLinearGradient(0, emberTop, 0, y + h);
+    ember.addColorStop(0, "rgba(255, 90, 31, 0)");
+    ember.addColorStop(0.4, "rgba(255, 90, 31, 0.5)");
+    ember.addColorStop(1, "rgba(255, 184, 28, 0.9)");
+    ctx.fillStyle = ember;
+    ctx.fillRect(x, emberTop, w, y + h - emberTop + 1);
+  }
+
+  function paintTaxiSlice(ctx, x, y, w, h) {
+    if (h >= 8) {
+      const winY = y + 1.5;
+      const winH = Math.min(6.4, h * 0.38);
+      const panes = 3;
+      const gap = 2.5;
+      const insetL = 16;
+      const insetR = 6;
+      const paneW = Math.max(6, (w - insetL - insetR - gap * (panes - 1)) / panes);
+      for (let k = 0; k < panes; k++) {
+        const px = x + insetL + k * (paneW + gap);
+        ctx.fillStyle = "#14325C";
+        pathRound(ctx, px, winY, paneW, winH, 1.4);
+        ctx.fill();
+        ctx.fillStyle = "#4EB8E8";
+        pathRound(ctx, px + 1, winY + 1, Math.max(2, paneW - 2), Math.max(2, winH * 0.58), 1);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255, 248, 236, 0.72)";
+        ctx.fillRect(px + 1.4, winY + 1.3, Math.max(2, paneW * 0.42), 1.35);
+      }
+    }
+    const stripeH = Math.min(5, Math.max(3.4, h * 0.28));
+    const stripeY = y + h - stripeH - Math.min(1.6, h * 0.08);
+    ctx.fillStyle = "#007A4D";
+    ctx.fillRect(x, stripeY, w, stripeH);
+    ctx.fillStyle = "rgba(255, 248, 236, 0.42)";
+    ctx.fillRect(x, stripeY + 1, w, 1);
+    const hr = Math.min(3.5, h * 0.24);
+    const hx = x + 8;
+    const hy = y + h * 0.4;
+    const glow = ctx.createRadialGradient(hx, hy, 0.4, hx, hy, hr * 1.9);
+    glow.addColorStop(0, "rgba(255, 252, 240, 0.98)");
+    glow.addColorStop(0.42, "rgba(255, 220, 120, 0.8)");
+    glow.addColorStop(1, "rgba(255, 184, 28, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(hx, hy, hr * 1.9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#FFF8EC";
+    ctx.beginPath();
+    ctx.arc(hx - 0.4, hy - 0.4, hr * 0.62, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function paintPylonDisc(ctx, x, y, w, h) {
     const cx = x + w / 2;
     const cy = y + h / 2;
+    ctx.fillStyle = "rgba(255, 248, 236, 0.78)";
+    ctx.fillRect(x, y + h * 0.1, w, Math.max(2.2, h * 0.18));
+    ctx.fillStyle = "rgba(32, 38, 42, 0.5)";
+    ctx.fillRect(x, y + h * 0.34, w, Math.max(1.5, h * 0.12));
+    if (h >= 8) {
+      ctx.fillStyle = "#F7FAFB";
+      ctx.strokeStyle = "#5C656A";
+      ctx.lineWidth = 1.15;
+      for (let k = 0; k < 3; k++) {
+        const ix = x + w * (0.3 + k * 0.2);
+        ctx.beginPath();
+        ctx.ellipse(ix, cy, 5.4, Math.max(2.8, h * 0.34), 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = "#1A2024";
+    ctx.lineWidth = 2.8;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x + 6, y + 1.4);
+    ctx.lineTo(x + w - 6, y + h - 1.4);
+    ctx.moveTo(x + w - 6, y + 1.4);
+    ctx.lineTo(x + 6, y + h - 1.4);
+    ctx.moveTo(cx, y + 1);
+    ctx.lineTo(cx, y + h - 1);
+    ctx.stroke();
+    [x + 8, x + w - 8].forEach(function (lx) {
+      const glow = ctx.createRadialGradient(lx, cy, 0.3, lx, cy, 6.2);
+      glow.addColorStop(0, "rgba(255, 236, 170, 0.96)");
+      glow.addColorStop(0.45, "rgba(255, 184, 28, 0.62)");
+      glow.addColorStop(1, "rgba(255, 184, 28, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(lx, cy, 6.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFE08A";
+      ctx.beginPath();
+      ctx.arc(lx, cy, 2.15, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function paintProteaPetal(ctx, reach) {
+    ctx.beginPath();
+    ctx.moveTo(-3.6, 1);
+    ctx.quadraticCurveTo(-7, reach * 0.5, 0, reach);
+    ctx.quadraticCurveTo(7, reach * 0.5, 3.6, 1);
+    ctx.closePath();
+  }
+
+  function paintProteaHead(ctx, x, y, w, h) {
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    ctx.fillStyle = "#A83868";
+    ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+    const n = 7;
+    const reach = Math.max(8, Math.min(w * 0.48, h * 1.05));
+    for (let k = 0; k < n; k++) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-Math.PI / 2 + (k / n) * Math.PI * 2);
+      ctx.fillStyle = k % 2 === 0 ? "#E85A8C" : "#F4A0BE";
+      paintProteaPetal(ctx, reach);
+      ctx.fill();
+      ctx.fillStyle = "#FFD0E0";
+      ctx.beginPath();
+      ctx.moveTo(-1.7, reach * 0.58);
+      ctx.quadraticCurveTo(-2.6, reach * 0.8, 0, reach);
+      ctx.quadraticCurveTo(2.6, reach * 0.8, 1.7, reach * 0.58);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    const gr = Math.min(5.5, h * 0.34);
+    const gold = ctx.createRadialGradient(cx - 1.2, cy - 1, 0.3, cx, cy, gr);
+    gold.addColorStop(0, "#FFF8EC");
+    gold.addColorStop(0.42, "#FFD24A");
+    gold.addColorStop(1, "#C88912");
+    ctx.fillStyle = gold;
+    ctx.beginPath();
+    ctx.arc(cx, cy, gr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function paintProteaStem(ctx, x, y, w, h) {
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const rib = Math.min(8, w * 0.11);
+    ctx.fillStyle = "#043828";
+    ctx.fillRect(cx - rib / 2, y, rib, h);
+    ctx.fillStyle = "rgba(155, 231, 192, 0.85)";
+    ctx.fillRect(cx - rib / 2 - 2.2, y, 2.2, h);
+    if (h < 11) return;
+    ctx.fillStyle = "#3DDB8A";
+    ctx.beginPath();
+    ctx.moveTo(cx - rib * 0.2, cy);
+    ctx.quadraticCurveTo(x + w * 0.16, y + 1.2, x + 7, cy - 0.4);
+    ctx.quadraticCurveTo(x + w * 0.2, y + h - 1.4, cx - rib * 0.2, cy);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx + rib * 0.2, cy);
+    ctx.quadraticCurveTo(x + w * 0.84, y + h - 1.2, x + w - 7, cy + 0.4);
+    ctx.quadraticCurveTo(x + w * 0.8, y + 1.4, cx + rib * 0.2, cy);
+    ctx.fill();
+    ctx.strokeStyle = "#064E32";
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(cx - 1, cy);
+    ctx.lineTo(x + 11, cy - 0.3);
+    ctx.moveTo(cx + 1, cy);
+    ctx.lineTo(x + w - 11, cy + 0.3);
+    ctx.stroke();
+  }
+
+  function paintCapMotif(ctx, motif, x, y, w, h, lipIsBottom) {
+    ctx.save();
+    pathRound(ctx, x, y, w, h, 4);
+    ctx.clip();
+    if (motif === "taxi_stack") {
+      ctx.fillStyle = "#1E4D8C";
+      ctx.fillRect(x + 16, y + 1, w * 0.46, Math.min(3.6, h * 0.42));
+      ctx.fillStyle = "rgba(255, 248, 236, 0.7)";
+      ctx.fillRect(x + 18, y + 1.5, w * 0.12, 1.2);
+      ctx.fillStyle = "#007A4D";
+      ctx.fillRect(x, y + h - 3.5, w, 3.5);
+      const glow = ctx.createRadialGradient(x + 8, y + h / 2, 0.3, x + 8, y + h / 2, 5);
+      glow.addColorStop(0, "rgba(255, 252, 240, 0.95)");
+      glow.addColorStop(1, "rgba(255, 184, 28, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x + 8, y + h / 2, 5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (motif === "pylon_disc") {
+      ctx.strokeStyle = "#1A2024";
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(x + 6, y + 1);
+      ctx.lineTo(x + w - 6, y + h - 1);
+      ctx.moveTo(x + w - 6, y + 1);
+      ctx.lineTo(x + 6, y + h - 1);
+      ctx.stroke();
+      const lx = x + w / 2;
+      const ly = y + h / 2;
+      const glow = ctx.createRadialGradient(lx, ly, 0.4, lx, ly, 7);
+      glow.addColorStop(0, "rgba(255, 240, 180, 0.98)");
+      glow.addColorStop(0.5, "rgba(255, 184, 28, 0.55)");
+      glow.addColorStop(1, "rgba(255, 184, 28, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFE08A";
+      ctx.beginPath();
+      ctx.arc(lx, ly, 2.3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (motif === "protea_column") {
+      ctx.fillStyle = "#A83868";
+      ctx.fillRect(x, y, w, h);
+      const n = 8;
+      const tip = lipIsBottom ? y + h - 0.4 : y + 0.4;
+      const base = lipIsBottom ? y + 0.6 : y + h - 0.6;
+      for (let k = 0; k < n; k++) {
+        const px = x + ((k + 0.5) / n) * w;
+        ctx.fillStyle = k % 2 === 0 ? "#E85A8C" : "#F4A0BE";
+        ctx.beginPath();
+        ctx.moveTo(px - 6.2, base);
+        ctx.lineTo(px, tip);
+        ctx.lineTo(px + 6.2, base);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = "#FFD24A";
+      ctx.beginPath();
+      ctx.arc(x + w / 2, y + h / 2, 3.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFF8EC";
+      ctx.beginPath();
+      ctx.arc(x + w / 2 - 0.7, y + h / 2 - 0.5, 1.15, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = "#C4783A";
+      ctx.fillRect(x, y, w, 2.5);
+      ctx.fillRect(x, y + h - 2.5, w, 2.5);
+      const ember = ctx.createLinearGradient(0, lipIsBottom ? y : y + h, 0, lipIsBottom ? y + h : y);
+      ember.addColorStop(0, "rgba(255, 90, 31, 0)");
+      ember.addColorStop(1, "rgba(255, 150, 40, 0.8)");
+      ctx.fillStyle = ember;
+      ctx.fillRect(x, y, w, h);
+    }
+    ctx.restore();
+  }
+
+  function drawDisc(ctx, motif, x, y, w, h, i) {
     ctx.save();
     discPath(ctx, x, y, w, h);
     ctx.clip();
     const g = ctx.createLinearGradient(0, y, 0, y + h);
     if (motif === "taxi_stack") {
-      g.addColorStop(0, "#FFF3C4");
-      g.addColorStop(0.35, "#FFB81C");
+      g.addColorStop(0, "#FFF6D0");
+      g.addColorStop(0.22, "#FFE28A");
+      g.addColorStop(0.55, "#FFB81C");
       g.addColorStop(1, "#C88912");
     } else if (motif === "pylon_disc") {
-      g.addColorStop(0, "#E4EAEE");
-      g.addColorStop(0.45, "#9AA3A8");
+      g.addColorStop(0, "#F4F7F8");
+      g.addColorStop(0.35, "#C5CED3");
+      g.addColorStop(0.7, "#8E989E");
       g.addColorStop(1, "#4A5256");
-    } else if (motif === "protea_column") {
-      g.addColorStop(0, "#9BE7C0");
-      g.addColorStop(0.45, "#007A4D");
+    } else if (motif === "protea_column" && i % 2 !== 0) {
+      g.addColorStop(0, "#B6F0D0");
+      g.addColorStop(0.4, "#1F8A5B");
       g.addColorStop(1, "#064E32");
+    } else if (motif === "protea_column") {
+      g.addColorStop(0, "#F4A0BE");
+      g.addColorStop(1, "#E85A8C");
     } else {
-      g.addColorStop(0, "#8A8078");
-      g.addColorStop(0.28, "#4A4038");
-      g.addColorStop(0.7, "#2A2420");
-      g.addColorStop(1, "#14100E");
+      g.addColorStop(0, "#B0A69C");
+      g.addColorStop(0.2, "#6E6560");
+      g.addColorStop(0.48, "#3A342F");
+      g.addColorStop(0.78, "#1C1816");
+      g.addColorStop(1, "#0E0C0A");
     }
     ctx.fillStyle = g;
     ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
-    if (motif === "taxi_stack") {
-      if (i % 3 !== 2) {
-        ctx.fillStyle = "#1E4D8C";
-        pathRound(ctx, x + 7, y + 2.5, w * 0.46, Math.max(6, h - 5), 2);
-        ctx.fill();
-        ctx.fillStyle = "rgba(255, 255, 255, 0.62)";
-        ctx.fillRect(x + 10, y + 3.5, w * 0.16, 2);
-      }
-      ctx.fillStyle = "#007A4D";
-      ctx.fillRect(x, y + h * 0.62, w, Math.max(3.5, h * 0.24));
-      ctx.fillStyle = "#FFF8EC";
-      ctx.beginPath();
-      ctx.arc(x + w - 9, cy, 2.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "rgba(255, 248, 236, 0.9)";
-      ctx.beginPath();
-      ctx.arc(x + w - 10, cy - 0.7, 1.1, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (motif === "pylon_disc") {
-      ctx.strokeStyle = "rgba(26, 32, 36, 0.82)";
-      ctx.lineWidth = 2.2;
-      ctx.beginPath();
-      ctx.moveTo(x + 10, y + 2);
-      ctx.lineTo(x + w - 10, y + h - 2);
-      ctx.moveTo(x + w - 10, y + 2);
-      ctx.lineTo(x + 10, y + h - 2);
-      ctx.stroke();
-      ctx.fillStyle = "#F4F7F8";
-      ctx.strokeStyle = "#5C656A";
-      ctx.lineWidth = 1;
-      for (let k = 0; k < 3; k++) {
-        const ix = x + w * (0.3 + k * 0.2);
-        ctx.beginPath();
-        ctx.ellipse(ix, cy, 4.4, Math.max(2.2, h * 0.28), 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-      if (i % 2 === 0) {
-        ctx.fillStyle = "#FFB81C";
-        ctx.beginPath();
-        ctx.arc(cx, y + 3.4, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else if (motif === "protea_column") {
-      if (i % 2 === 0) {
-        ctx.fillStyle = "#E85A8C";
-        for (let k = -2; k <= 2; k++) {
-          ctx.save();
-          ctx.translate(cx + k * 8, cy);
-          ctx.rotate(k * 0.38);
-          ctx.beginPath();
-          ctx.moveTo(0, -h * 0.5);
-          ctx.quadraticCurveTo(4.4, 0, 0, h * 0.46);
-          ctx.quadraticCurveTo(-4.4, 0, 0, -h * 0.5);
-          ctx.fill();
-          ctx.restore();
-        }
-        ctx.fillStyle = "#FFE08A";
-        ctx.beginPath();
-        ctx.arc(cx, cy, 3.3, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.strokeStyle = "rgba(232, 248, 236, 0.55)";
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, w * 0.22, h * 0.32, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-    } else {
-      ctx.fillStyle = "#C4783A";
-      ctx.fillRect(x, y, 5, h);
-      ctx.fillRect(x + w - 5, y, 5, h);
-      ctx.fillStyle = "#6B3A1F";
-      ctx.fillRect(x + 5, y, 2, h);
-      ctx.fillRect(x + w - 7, y, 2, h);
-      ctx.fillStyle = "#0E1418";
-      for (let k = 0; k < 4; k++) {
-        ctx.beginPath();
-        ctx.ellipse(x + 18 + k * ((w - 36) / 3), cy, 2.4, 1.7, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = "rgba(255, 248, 236, 0.18)";
-      ctx.fillRect(x + 10, y + 2, w - 20, 2.4);
-      const ember = ctx.createLinearGradient(0, y + h * 0.35, 0, y + h);
-      ember.addColorStop(0, "rgba(255, 90, 31, 0)");
-      ember.addColorStop(1, "rgba(255, 90, 31, 0.62)");
-      ctx.fillStyle = ember;
-      ctx.fillRect(x, y, w, h);
-    }
+    if (motif === "taxi_stack") paintTaxiSlice(ctx, x, y, w, h);
+    else if (motif === "pylon_disc") paintPylonDisc(ctx, x, y, w, h);
+    else if (motif === "protea_column" && i % 2 === 0) paintProteaHead(ctx, x, y, w, h);
+    else if (motif === "protea_column") paintProteaStem(ctx, x, y, w, h);
+    else paintBraaiDrum(ctx, x, y, w, h);
     ctx.restore();
     discPath(ctx, x, y, w, h);
     ctx.lineWidth = 1.6;
     ctx.strokeStyle = motif === "taxi_stack" ? "#6B4A08"
       : motif === "pylon_disc" ? "#2A3034"
-      : motif === "protea_column" ? "#064E32"
+      : motif === "protea_column" ? (i % 2 === 0 ? "#6A2040" : "#064E32")
       : "#1C1614";
     ctx.stroke();
   }
@@ -896,18 +1095,17 @@
       cap.addColorStop(0, "#8A6A52");
       cap.addColorStop(1, "#3A302C");
     }
-    ctx.fillStyle = cap;
+    ctx.save();
     pathRound(ctx, capX, capY, capW, capH, 4);
-    ctx.fill();
+    ctx.clip();
+    ctx.fillStyle = cap;
+    ctx.fillRect(capX - 1, capY - 1, capW + 2, capH + 2);
+    ctx.restore();
+    paintCapMotif(ctx, motif, capX, capY, capW, capH, lipIsBottom);
+    pathRound(ctx, capX, capY, capW, capH, 4);
     ctx.lineWidth = 2;
     ctx.strokeStyle = Pal.INK;
     ctx.stroke();
-    if (motif === "pylon_disc") {
-      ctx.fillStyle = Pal.BOK_GOLD;
-      ctx.beginPath();
-      ctx.arc(capX + capW / 2, capY + capH / 2, 2.4, 0, Math.PI * 2);
-      ctx.fill();
-    }
     const hy = lipIsBottom ? faceY - 1.5 : faceY + 1.5;
     drawGapLip(ctx, capX, hy, capW);
     if (tower.pulse) {
