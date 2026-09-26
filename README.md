@@ -41,7 +41,7 @@ Coins are the only soft currency. They stay in this browser. An old nug balance 
 
 A run banks **+1 coin per stack cleared**, plus a near-miss skim of **+1** when the hitbox edge passes within 6px of a lip, capped at **+8** per run. The first run of a calendar day adds **+10** coins. The streak count caps at **7** and resets after a missed day.
 
-Score **10 / 25 / 50 / 100** each show one short toast. They never block a flap. Dying at **15+** with a fair run toasts **Clean flight** and banks **+25** coins, once per local day. A new best plays a gold feather burst and whispers **New best**. The death card still shows cream **+N coins** for the run bank.
+Score **10 / 25 / 50 / 100** each show one short toast. They never block a flap. A run that reaches **15+** with zero near-miss skims toasts **Clean flight** on death and banks **+25** coins, once per local day. One skim that run cancels the gift. A new best plays a gold feather burst and whispers **New best**. The death card still shows cream **+N coins** for the run bank.
 
 Best-score titles are cosmetic. They never gate PLAY or chests. Each title pays its coin gift once, the first time that best is reached:
 

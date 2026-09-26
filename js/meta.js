@@ -456,10 +456,11 @@
         save();
         return 1;
       },
-      noteCleanFlight: function (score) {
+      noteCleanFlight: function (score, skims) {
         refresh();
         const need = Feel.CONFIG.CLEAN_FLIGHT_SCORE;
         if ((score || 0) < need) return 0;
+        if ((skims || 0) > 0) return 0;
         const today = localDay(now());
         if (state.cleanDay === today) return 0;
         state.cleanDay = today;
