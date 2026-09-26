@@ -1039,8 +1039,17 @@
     const y = r.y + dy;
     ctx.save();
     pathRound(ctx, r.x, y, r.w, r.h, rad);
-    ctx.fillStyle = hot ? "rgba(255, 236, 210, 0.22)" : "rgba(255, 236, 210, 0.12)";
+    ctx.fillStyle = hot ? "rgba(42, 24, 14, 0.62)" : "rgba(28, 16, 10, 0.5)";
     ctx.fill();
+    ctx.save();
+    pathRound(ctx, r.x, y, r.w, r.h, rad);
+    ctx.clip();
+    const frost = ctx.createLinearGradient(r.x, y, r.x, y + r.h * 0.55);
+    frost.addColorStop(0, "rgba(255, 236, 210, 0.34)");
+    frost.addColorStop(1, "rgba(255, 236, 210, 0)");
+    ctx.fillStyle = frost;
+    ctx.fillRect(r.x, y, r.w, r.h * 0.55);
+    ctx.restore();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(255, 248, 236, 0.35)";
     ctx.stroke();
