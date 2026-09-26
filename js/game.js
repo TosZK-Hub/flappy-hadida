@@ -538,7 +538,7 @@
     Meta.noteSkim(skim);
     banked = scored + skim;
     Meta.addCoins(banked);
-    const clean = run.unfair ? 0 : Meta.noteCleanFlight(scored);
+    const clean = Meta.noteCleanFlight(scored, skim);
     if (jobsProgressed()) showToast(Feel.COPY.CHALLENGE_PLUS, 1.5, true);
     if (clean) showToast(Feel.COPY.CLEAN + " +" + clean, 1.2);
     popCoins(0.3);

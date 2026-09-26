@@ -211,7 +211,6 @@
       score: 0,
       towers: [],
       skim: 0,
-      unfair: false,
       alive: true,
       spawned: false,
       packPairs: 0,

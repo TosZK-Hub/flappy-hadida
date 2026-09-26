@@ -268,7 +268,7 @@ assert.ok(death.restart.y - (stash.job.y + stash.job.h) >= 16);
 assert.ok(!overlaps(death.restart, death.home));
 assert.ok(!overlaps(death.restart, stash.coins));
 assert.ok(!overlaps(death.restart, stash.job));
-assert.strictEqual(P.createRun(1).unfair, false);
+assert.strictEqual(P.createRun(1).skim, 0);
 
 const root = path.join(__dirname, "..");
 ["index.html", "js/game.js", "js/meta.js", "js/render.js", "js/feel.js", "js/physics.js"].forEach(function (rel) {
@@ -280,7 +280,8 @@ const root = path.join(__dirname, "..");
 });
 const gameSrc = fs.readFileSync(path.join(root, "js/game.js"), "utf8");
 assert.ok(gameSrc.indexOf("collectionHit") < gameSrc.indexOf("playHit(pt)"));
-assert.ok(gameSrc.includes("run.unfair"));
+assert.ok(gameSrc.includes("noteCleanFlight(scored, skim)"));
+assert.ok(!gameSrc.includes("run.unfair"));
 assert.ok(gameSrc.includes("Challenge +1") || gameSrc.includes("CHALLENGE_PLUS"));
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert.ok(html.includes("One flap. Haa-haa energy."));
@@ -420,11 +421,14 @@ assert.strictEqual(ladder.claimRanks(200).length, 0);
 
 let cleanClock = Date.UTC(2026, 8, 9, 8);
 const clean = Meta.create(memory(), function () { return cleanClock; });
-assert.strictEqual(clean.noteCleanFlight(14), 0);
-assert.strictEqual(clean.noteCleanFlight(15), 25);
-assert.strictEqual(clean.noteCleanFlight(80), 0);
+assert.strictEqual(clean.noteCleanFlight(14, 0), 0);
+assert.strictEqual(clean.noteCleanFlight(15, 1), 0);
+assert.strictEqual(clean.noteCleanFlight(40, 2), 0);
+assert.strictEqual(clean.coins(), 0);
+assert.strictEqual(clean.noteCleanFlight(15, 0), 25);
+assert.strictEqual(clean.noteCleanFlight(80, 0), 0);
 cleanClock = Date.UTC(2026, 8, 10, 1);
-assert.strictEqual(clean.noteCleanFlight(15), 25);
+assert.strictEqual(clean.noteCleanFlight(15, 0), 25);
 assert.strictEqual(clean.coins(), 50);
 
 let bokClock = Date.UTC(2026, 8, 4, 12);
