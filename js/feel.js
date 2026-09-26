@@ -72,6 +72,8 @@
     IRI_TEAL: "#2A9A8A",
     CHEEK: "#F5F0E8",
     BILL: "#3A3A40",
+    BILL_HI: "#C8C8D0",
+    BILL_TIP: "#1A1A20",
     BOK_GREEN: "#007A4D",
     BOK_GOLD: "#FFB81C",
     SKY_SA: "#4EB8E8",

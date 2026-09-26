@@ -28,6 +28,7 @@
   let best = loadNum(BEST_KEY);
   let newBest = false;
   let deathFeather = false;
+  let dieAt = -1;
   let muted = loadMute();
   let flapQueued = false;
   let lock = 0;
@@ -291,6 +292,7 @@
     overlay = null;
     reveal = null;
     deathFeather = false;
+    dieAt = -1;
     run = null;
     lock = 0;
     deathFreeze = 0;
@@ -311,6 +313,7 @@
   function startPlaying() {
     markPlayed();
     deathFeather = false;
+    dieAt = -1;
     newBest = false;
     const streakGrant = Meta.noteRun();
     jobsAtRun = jobSnap();
@@ -373,26 +376,29 @@
     player.flapAt = time;
     Sfx.flap();
     const ang = player.rot || 0;
-    const costume = Feel.costumeById(skin);
     const wingX = P.PLAYER_X - Math.cos(ang) * 18;
     const wingY = player.y - Math.sin(ang) * 6 - 8;
     const span = C.SPARK_MAX - C.SPARK_MIN + 1;
     const n = C.SPARK_MIN + Math.floor(Math.random() * span);
+    const mote = ["#3DDB8A", "#8A5AB8", "#2A9A8A"];
     for (let i = 0; i < n; i++) {
-      const a = Math.PI + (Math.random() - 0.5) * 1.2;
-      const sp = 28 + Math.random() * 40;
+      const a = Math.PI + (Math.random() - 0.5) * 1.1;
+      const sp = 36 + Math.random() * 48;
       spawn({
-        kind: "smoke",
-        x: wingX,
+        kind: "feather",
+        soft: true,
+        x: wingX + (i - 1) * 3,
         y: wingY,
         vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        life: 0.16 + Math.random() * 0.06,
-        max: 0.22,
-        size: 3.2 + Math.random() * 1.4,
+        vy: Math.sin(a) * sp - 10,
+        life: 0.18,
+        max: 0.18,
+        size: 0.42 + Math.random() * 0.22,
+        rot: a,
+        spin: (i % 2 ? 1 : -1) * 5,
         front: false,
         scroll: true,
-        color: costume.trail || Feel.PALETTE.HAD_HI,
+        color: mote[i % mote.length],
       });
     }
   }
@@ -428,6 +434,25 @@
       run.skim = (run.skim || 0) + 1;
       Meta.noteSkim(run.skim);
       skimFlash = { a: 1, x: ev.gapX, y: ev.gapY, h: ev.gapH };
+      const lips = [ev.gapY - ev.gapH / 2, ev.gapY + ev.gapH / 2];
+      for (let s = 0; s < lips.length; s++) {
+        for (let k = 0; k < 3; k++) {
+          spawn({
+            kind: "spark",
+            x: ev.gapX + (k - 1) * 7,
+            y: lips[s],
+            vx: (k - 1) * 14,
+            vy: s === 0 ? -18 : 18,
+            life: 0.18,
+            max: 0.18,
+            size: 2.6,
+            rot: k * 0.4,
+            front: true,
+            scroll: true,
+            color: k === 1 ? "#FFF8EC" : "#FFB81C",
+          });
+        }
+      }
       floaters.push({
         text: "+1",
         x: ev.gapX + 28,
@@ -495,6 +520,7 @@
 
   function onDie(kind) {
     state = OVER;
+    dieAt = time;
     deathFreeze = C.DEATH_FREEZE;
     lock = C.DEATH_FREEZE + C.DEATH_BEAT;
     settle = 3.5;
@@ -526,13 +552,13 @@
         y: run.player.y + (Math.random() - 0.5) * 12,
         vx: (Math.random() - 0.5) * 36,
         vy: -16 - Math.random() * 60,
-        life: 0.26 + Math.random() * 0.12,
-        max: 0.4,
-        size: 2.2 + Math.random() * 2.4,
+        life: 0.12 + Math.random() * 0.08,
+        max: 0.2,
+        size: 2.2 + Math.random() * 2.2,
         front: true,
         scroll: false,
         grav: -30,
-        color: i % 5 === 0 ? Feel.PALETTE.HAD_HI : Feel.PALETTE.ASH,
+        color: i % 2 ? "#8FA396" : "#5E6B64",
       });
     }
   }
@@ -599,7 +625,7 @@
     } else if (reveal && reveal.life <= 0 && reveal.phase === "flash") {
       reveal.phase = "card";
     }
-    if (skimFlash && skimFlash.a > 0) skimFlash.a = Math.max(0, skimFlash.a - dt / 0.1);
+    if (skimFlash && skimFlash.a > 0) skimFlash.a = Math.max(0, skimFlash.a - dt / 0.18);
     if (toasts.length && !overlay) {
       toasts[0].life -= dt;
       if (toasts[0].life <= 0) toasts.shift();
@@ -717,7 +743,7 @@
     if (settleLife > 0) ctx.translate(0, settle * (settleLife / 0.12));
     const player = state === TITLE || !run ? titlePose(time) : run.player;
     player.skin = skin;
-    player.ash = state === OVER && flash <= 0;
+    player.ash = state === OVER && dieAt >= 0 ? Math.min(1, Math.max(0, (time - dieAt) / 0.2)) : 0;
     Draw.drawBackground(ctx, scroll, time);
     Draw.drawParticles(ctx, particles, false);
     if (state === TITLE) Draw.drawHomeWorld(ctx, scroll, time);
