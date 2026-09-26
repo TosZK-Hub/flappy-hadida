@@ -1052,9 +1052,15 @@
 
   function chestView() {
     const frame = panelFrame();
+    const free = {
+      x: frame.panel.x + 18,
+      y: frame.panel.y + 102,
+      w: frame.panel.w - 36,
+      h: 44,
+    };
     const chests = Feel.CHESTS;
     const rows = chests.map(function (c, i) {
-      const y = frame.panel.y + 118 + i * 150;
+      const y = frame.panel.y + 158 + i * 128;
       return {
         id: c.id,
         name: c.name,
@@ -1062,11 +1068,11 @@
         x: frame.panel.x + 18,
         y: y,
         w: frame.panel.w - 36,
-        h: 136,
-        open: { x: frame.panel.x + frame.panel.w - 36 - 118, y: y + 74, w: 118, h: 46 },
+        h: 116,
+        open: { x: frame.panel.x + frame.panel.w - 36 - 112, y: y + 58, w: 112, h: 46 },
       };
     });
-    return { panel: frame.panel, close: frame.close, rows: rows };
+    return { panel: frame.panel, close: frame.close, free: free, rows: rows };
   }
 
   function drawChestGlyph(ctx, x, y, kind) {
@@ -1106,21 +1112,26 @@
       ctx.lineWidth = 1.5;
       ctx.strokeStyle = "rgba(255, 248, 236, 0.2)";
       ctx.stroke();
-      drawChestGlyph(ctx, row.x + 40, row.y + 58, row.id);
-      stamp(ctx, row.name.toUpperCase(), row.x + 150, row.y + 36, 16, Pal.CREAM_UI);
-      drawCoinIcon(ctx, row.x + 108, row.y + 68, 11);
-      text(ctx, String(row.cost), row.x + 146, row.y + 68, 16, Pal.BOK_GOLD, null);
+      drawChestGlyph(ctx, row.x + 40, row.y + 48, row.id);
+      stamp(ctx, row.name.toUpperCase(), row.x + 150, row.y + 28, 16, Pal.CREAM_UI);
+      drawCoinIcon(ctx, row.x + 108, row.y + 56, 11);
+      text(ctx, String(row.cost), row.x + 146, row.y + 56, 16, Pal.BOK_GOLD, null);
+      const pity = ui.pityText ? ui.pityText(row.id) : "";
+      if (pity) text(ctx, pity, row.x + 118, row.y + 92, 12, Pal.CREAM_UI, null);
       const afford = ui.coins >= row.cost;
       if (afford) drawGoldButton(ctx, row.open, "OPEN");
       else drawGhostButton(ctx, row.open, "OPEN");
     }
-    if (ui.whisper) stamp(ctx, "Earn coins on runs", P.W / 2, view.panel.y + view.panel.h - 36, 13, Pal.CREAM_UI);
-    else text(ctx, "Costumes come from chests.", P.W / 2, view.panel.y + view.panel.h - 28, 13, Pal.CREAM_UI, null);
+    if (ui.freeReady) drawGoldButton(ctx, view.free, ui.freeLabel || "DAILY FREE");
+    else drawGhostButton(ctx, view.free, ui.freeLabel || "DAILY FREE");
+    if (ui.whisper) stamp(ctx, Feel.COPY.BROKE, P.W / 2, view.panel.y + view.panel.h - 22, 13, Pal.CREAM_UI);
+    else text(ctx, "Costumes come from chests.", P.W / 2, view.panel.y + view.panel.h - 18, 12, Pal.CREAM_UI, null);
   }
 
   function chestHit(pt) {
     const view = chestView();
     if (hitRect(pt, view.close)) return { action: "close" };
+    if (view.free && hitRect(pt, view.free)) return { action: "free" };
     for (let i = 0; i < view.rows.length; i++) {
       if (hitRect(pt, view.rows[i].open)) return { action: "open", id: view.rows[i].id };
     }
@@ -1213,8 +1224,15 @@
     return null;
   }
 
-  function revealLayout() {
-    const card = { x: 48, y: 168, w: 324, h: 420 };
+  function revealLayout(coinsOnly) {
+    const card = { x: 48, y: coinsOnly ? 220 : 168, w: 324, h: coinsOnly ? 280 : 420 };
+    if (coinsOnly) {
+      return {
+        card: card,
+        equip: null,
+        ok: { x: card.x + 72, y: card.y + card.h - 74, w: 180, h: 52 },
+      };
+    }
     return {
       card: card,
       equip: { x: card.x + 18, y: card.y + card.h - 74, w: 140, h: 52 },
@@ -1222,14 +1240,22 @@
     };
   }
 
+  function rarityInk(code) {
+    if (code === "L") return Pal.BOK_GOLD;
+    if (code === "E") return Pal.PROTEA_PINK;
+    if (code === "R") return "#7EE0A0";
+    return Pal.CREAM_UI;
+  }
+
   function drawReveal(ctx, ui) {
-    const box = revealLayout();
     const result = ui.result || {};
-    const life = ui.life || 0;
+    const phase = ui.phase || (ui.life > 0 ? "lid" : "card");
+    const coinsOnly = !!result.coinsGrant;
     ctx.fillStyle = "rgba(4, 24, 16, 0.55)";
     ctx.fillRect(0, 0, P.W, P.H);
-    if (life > 0) {
-      const open = 1 - life / 0.6;
+    if (phase === "lid") {
+      const life = ui.life > 0 ? ui.life : 0.001;
+      const open = 1 - life / Feel.CONFIG.REVEAL_LID;
       ctx.save();
       ctx.translate(P.W / 2, 360);
       drawChestGlyph(ctx, 0, 10, result.chest || "street");
@@ -1241,9 +1267,29 @@
       stamp(ctx, "OPENING", P.W / 2, 460, 16, Pal.CREAM_UI);
       return;
     }
+    if (phase === "flash") {
+      const code = result.rarity || "C";
+      const ink = rarityInk(code);
+      ctx.save();
+      ctx.fillStyle = ink;
+      ctx.globalAlpha = 0.16;
+      ctx.fillRect(0, 0, P.W, P.H);
+      ctx.restore();
+      drawWord(ctx, code, P.W / 2, P.H / 2 - 16, 120, ink);
+      stamp(ctx, (Feel.RARITY_NAME[code] || "").toUpperCase(), P.W / 2, P.H / 2 + 78, 18, ink);
+      return;
+    }
+    const box = revealLayout(coinsOnly);
     paintPlate(ctx, box.card.x, box.card.y, box.card.w, box.card.h, 24);
+    if (coinsOnly) {
+      drawCoinIcon(ctx, P.W / 2, box.card.y + 110, 28);
+      stamp(ctx, "DAILY CHEST", P.W / 2, box.card.y + 40, 16, Pal.BOK_GOLD);
+      stamp(ctx, "+" + result.coinsGrant + " COINS", P.W / 2, box.card.y + 168, 18, Pal.CREAM_UI);
+      drawGoldButton(ctx, box.ok, "OK");
+      return;
+    }
     const rarity = Feel.RARITY_NAME[result.rarity] || "";
-    stamp(ctx, rarity.toUpperCase(), P.W / 2, box.card.y + 36, 14, result.rarity === "L" ? Pal.BOK_GOLD : Pal.CREAM_UI);
+    stamp(ctx, rarity.toUpperCase(), P.W / 2, box.card.y + 36, 14, rarityInk(result.rarity));
     ctx.save();
     ctx.translate(P.W / 2, box.card.y + 150);
     ctx.scale(1.35, 1.35);
@@ -1251,16 +1297,19 @@
     ctx.restore();
     stamp(ctx, (result.name || "").toUpperCase(), P.W / 2, box.card.y + 250, 16, Pal.CREAM_UI);
     if (result.dupe) stamp(ctx, "Duplicate · +" + result.refund + " coins", P.W / 2, box.card.y + 286, 13, Pal.BOK_GOLD);
-    else if (result.full) stamp(ctx, "Full flock · +150 coins", P.W / 2, box.card.y + 286, 13, Pal.BOK_GOLD);
+    else if (result.full) stamp(ctx, Feel.COPY.FULL_FLOCK + " · +150 coins", P.W / 2, box.card.y + 286, 13, Pal.BOK_GOLD);
     else text(ctx, "New costume", P.W / 2, box.card.y + 286, 13, Pal.CREAM_UI, null);
     drawGoldButton(ctx, box.equip, "EQUIP");
     drawGhostButton(ctx, box.ok, "OK");
   }
 
-  function revealHit(pt, life) {
-    if (life > 0) return { action: "skip" };
-    const box = revealLayout();
-    if (hitRect(pt, box.equip)) return { action: "equip" };
+  function revealHit(pt, reveal) {
+    const life = reveal && reveal.life ? reveal.life : 0;
+    const phase = reveal && reveal.phase ? reveal.phase : (life > 0 ? "lid" : "card");
+    if (phase === "lid" || phase === "flash") return { action: "skip" };
+    const result = (reveal && reveal.result) || {};
+    const box = revealLayout(!!result.coinsGrant);
+    if (box.equip && hitRect(pt, box.equip)) return { action: "equip" };
     if (hitRect(pt, box.ok)) return { action: "ok" };
     return { action: "ok" };
   }
@@ -1301,7 +1350,9 @@
       pathRound(ctx, row.x, row.y, row.w, row.h, 14);
       ctx.fillStyle = "rgba(6, 30, 22, 0.45)";
       ctx.fill();
-      stamp(ctx, (row.period === "week" ? "WEEK  " : "DAY  ") + row.name.toUpperCase(), row.x + row.w / 2, row.y + 24, 12, Pal.CREAM_UI);
+      const label = (row.period === "week" ? "WEEK · " : "DAY · ") + row.name;
+      const labelSize = label.length > 26 ? 11 : 12;
+      stamp(ctx, label.toUpperCase(), row.x + row.w / 2, row.y + 22, labelSize, Pal.CREAM_UI);
       const trackX = row.x + 14;
       const trackW = row.claim.x - trackX - 12;
       pathRound(ctx, trackX, row.y + 40, trackW, 12, 6);
@@ -1376,6 +1427,20 @@
       if (p.kind === "coin") {
         ctx.rotate(p.rot || 0);
         drawCoinIcon(ctx, 0, 0, 7 * (p.size || 1));
+        ctx.restore();
+        continue;
+      }
+      if (p.kind === "feather") {
+        ctx.rotate(p.rot || 0);
+        ctx.fillStyle = p.color || Pal.BOK_GOLD;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 8 * (p.size || 1), 2.4 * (p.size || 1), 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = Pal.CREAM_UI;
+        ctx.globalAlpha = a * 0.75;
+        ctx.beginPath();
+        ctx.ellipse(-2.2, 0, 3.1, 1.05, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
         continue;
       }
@@ -1456,7 +1521,7 @@ function drawTitle(ctx, ui) {
   ctx.fillRect(0, 0, P.W, P.H);
   paintPlate(ctx, home.plate.x, 78, home.plate.w, 122, 22);
   drawWord(ctx, "FLAPPY HADIDA", P.W / 2, 112, 28, Pal.BOK_GOLD);
-    stamp(ctx, "One flap. Haa-haa energy.", P.W / 2, 148, 13, Pal.CREAM_UI);
+    stamp(ctx, Feel.COPY.TAGLINE, P.W / 2, 148, 13, Pal.CREAM_UI);
     text(ctx, "best  " + (ui.best || 0), P.W / 2, 176, 16, Pal.CREAM_UI, null);
     const rank = Feel.rankTitle(ui.best);
     if (rank) stamp(ctx, rank.toUpperCase(), P.W / 2, 190, 12, Pal.BOK_GOLD);
@@ -1522,7 +1587,7 @@ function drawTitle(ctx, ui) {
     const panel = d.panel;
     paintPlate(ctx, panel.x, panel.y, panel.w, panel.h, 24);
     drawWord(ctx, "GAME OVER", P.W / 2, panel.y + 92, 32, Pal.CREAM_UI);
-    stamp(ctx, (ui.rank || "").toUpperCase(), P.W / 2, panel.y + 128, 13, Pal.SUNSET_ORANGE);
+    if (ui.newBest) stamp(ctx, Feel.COPY.NEW_BEST, P.W / 2, panel.y + 128, 14, Pal.BOK_GOLD);
     stamp(ctx, "SCORE", P.W / 2, panel.y + 164, 14, Pal.CREAM_UI);
     drawWord(ctx, String(ui.score), P.W / 2, panel.y + 214, 52, Pal.CREAM_UI);
     stamp(ctx, "BEST", P.W / 2, panel.y + 262, 13, Pal.BOK_GOLD);
@@ -1531,7 +1596,7 @@ function drawTitle(ctx, ui) {
     if (rank) text(ctx, rank, P.W / 2, panel.y + 320, 13, Pal.BOK_GOLD, null);
     const stash = stashLayout(!!ui.jobClaim);
     drawCreamChip(ctx, stash.coins, "+" + (ui.banked || 0) + " coins");
-    if (stash.job) drawGhostButton(ctx, stash.job, "Challenge ready");
+    if (stash.job) drawGhostButton(ctx, stash.job, Feel.COPY.CLAIM_READY);
     if (ui.ready) drawGoldButton(ctx, d.restart, "RESTART");
     else stamp(ctx, "…", P.W / 2, d.restart.y + d.restart.h / 2, 18, Pal.CREAM_UI);
   }
