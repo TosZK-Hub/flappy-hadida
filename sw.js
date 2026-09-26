@@ -1,5 +1,5 @@
 /* Shell cache so Add to Home Screen can open after one visit. Network first. */
-const CACHE = "flappy-hadida-shell-1";
+const CACHE = "flappy-hadida-shell-3";
 const SHELL = [
   "./",
   "./index.html",

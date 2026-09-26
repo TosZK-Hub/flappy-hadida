@@ -27,6 +27,8 @@
   let run = null;
   let best = loadNum(BEST_KEY);
   let newBest = false;
+  let deathFeather = false;
+  let dieAt = -1;
   let muted = loadMute();
   let flapQueued = false;
   let lock = 0;
@@ -44,7 +46,6 @@
   let overlay = null;
   let reveal = null;
   let banked = 0;
-  let jobClaim = false;
   let coinPopDur = 0.4;
   let coinPop = 0;
   let chestWhisper = 0;
@@ -134,6 +135,7 @@
     } catch (e) {
       /* ignore */
     }
+    Meta.noteEquip(id);
   }
 
   function cycleSkin(dir) {
@@ -162,16 +164,6 @@
     const list = Meta.missions();
     for (let i = 0; i < list.length; i++) {
       if (list[i].progress > (jobsAtRun[list[i].id] || 0)) return true;
-    }
-    return false;
-  }
-
-  function jobCompletedThisRun() {
-    if (!jobsAtRun) return false;
-    const list = Meta.missions();
-    for (let i = 0; i < list.length; i++) {
-      const before = jobsAtRun[list[i].id] || 0;
-      if (list[i].ready && before < list[i].goal) return true;
     }
     return false;
   }
@@ -239,13 +231,6 @@
     };
   }
 
-  function rankFor(score) {
-    if (score >= 50) return "Legend";
-    if (score >= 25) return "Squad";
-    if (score >= 10) return "Rookie";
-    return "";
-  }
-
   function layoutNow() {
     const vv = window.visualViewport;
     const vw = vv ? vv.width : window.innerWidth;
@@ -306,7 +291,8 @@
     state = TITLE;
     overlay = null;
     reveal = null;
-    jobClaim = false;
+    deathFeather = false;
+    dieAt = -1;
     run = null;
     lock = 0;
     deathFreeze = 0;
@@ -326,10 +312,11 @@
 
   function startPlaying() {
     markPlayed();
-    jobClaim = false;
-    jobsAtRun = jobSnap();
+    deathFeather = false;
+    dieAt = -1;
     newBest = false;
     const streakGrant = Meta.noteRun();
+    jobsAtRun = jobSnap();
     run = P.createRun();
     state = PLAYING;
     overlay = null;
@@ -359,31 +346,59 @@
     if (particles.length > 180) particles.splice(0, particles.length - 180);
   }
 
+  function burstFeathers(x, y, hud) {
+    const life = C.FEATHER_LIFE;
+    const n = reduceMotion ? 5 : 9;
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI * 0.5 + (i - (n - 1) / 2) * 0.28;
+      spawn({
+        kind: "feather",
+        x: x,
+        y: y,
+        vx: Math.cos(a) * (70 + (i % 3) * 18),
+        vy: Math.sin(a) * 80 - 30,
+        life: life,
+        max: life,
+        size: 0.85 + (i % 2) * 0.25,
+        rot: a,
+        spin: (i % 2 ? 1 : -1) * 6,
+        front: true,
+        scroll: false,
+        hud: !!hud,
+        grav: 220,
+        color: Feel.PALETTE.GOLD,
+      });
+    }
+  }
+
   function onFlap(player) {
     player.emberKick = time;
     player.flapAt = time;
     Sfx.flap();
     const ang = player.rot || 0;
-    const costume = Feel.costumeById(skin);
     const wingX = P.PLAYER_X - Math.cos(ang) * 18;
     const wingY = player.y - Math.sin(ang) * 6 - 8;
     const span = C.SPARK_MAX - C.SPARK_MIN + 1;
     const n = C.SPARK_MIN + Math.floor(Math.random() * span);
+    const mote = ["#3DDB8A", "#8A5AB8", "#2A9A8A"];
     for (let i = 0; i < n; i++) {
-      const a = Math.PI + (Math.random() - 0.5) * 1.2;
-      const sp = 28 + Math.random() * 40;
+      const a = Math.PI + (Math.random() - 0.5) * 1.1;
+      const sp = 36 + Math.random() * 48;
       spawn({
-        kind: "smoke",
-        x: wingX,
+        kind: "feather",
+        soft: true,
+        x: wingX + (i - 1) * 3,
         y: wingY,
         vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp,
-        life: 0.16 + Math.random() * 0.06,
-        max: 0.22,
-        size: 3.2 + Math.random() * 1.4,
+        vy: Math.sin(a) * sp - 10,
+        life: 0.18,
+        max: 0.18,
+        size: 0.42 + Math.random() * 0.22,
+        rot: a,
+        spin: (i % 2 ? 1 : -1) * 5,
         front: false,
         scroll: true,
-        color: costume.trail || Feel.PALETTE.HAD_HI,
+        color: mote[i % mote.length],
       });
     }
   }
@@ -410,18 +425,34 @@
         color: Feel.PALETTE.GOLD,
       });
     }
-    const grant = Meta.notePipe();
+    Meta.notePipe();
     Meta.noteScore(run.score);
-    if (grant > 0) {
-      showToast("Five clear. +25 coins", 1.5);
-      popCoins();
-    }
     Sfx.score();
     rings.push({ x: ev.gapX, y: ev.gapY, radius: 14, life: 0.45, max: 0.45 });
     floaters.push({ text: "+1", x: ev.gapX + 20, y: ev.gapY, life: 0.55, max: 0.55, vy: -36 });
     if (ev.near && (run.skim || 0) < C.SKIM_CAP) {
       run.skim = (run.skim || 0) + 1;
+      Meta.noteSkim(run.skim);
       skimFlash = { a: 1, x: ev.gapX, y: ev.gapY, h: ev.gapH };
+      const lips = [ev.gapY - ev.gapH / 2, ev.gapY + ev.gapH / 2];
+      for (let s = 0; s < lips.length; s++) {
+        for (let k = 0; k < 3; k++) {
+          spawn({
+            kind: "spark",
+            x: ev.gapX + (k - 1) * 7,
+            y: lips[s],
+            vx: (k - 1) * 14,
+            vy: s === 0 ? -18 : 18,
+            life: 0.18,
+            max: 0.18,
+            size: 2.6,
+            rot: k * 0.4,
+            front: true,
+            scroll: true,
+            color: k === 1 ? "#FFF8EC" : "#FFB81C",
+          });
+        }
+      }
       floaters.push({
         text: "+1",
         x: ev.gapX + 28,
@@ -433,14 +464,33 @@
       });
     }
     if (run.score > best) {
+      const first = !newBest;
       best = run.score;
       newBest = true;
       saveBest(best);
+      const gifts = Meta.claimRanks(best);
+      for (let g = 0; g < gifts.length; g++) {
+        showToast(gifts[g].title + " +" + gifts[g].gift, 1.2);
+      }
+      if (first) {
+        burstFeathers(P.PLAYER_X, run.player.y, false);
+        floaters.push({
+          text: Feel.COPY.NEW_BEST,
+          x: P.W / 2,
+          y: 148,
+          life: 1.1,
+          max: 1.1,
+          vy: -10,
+          scroll: false,
+          color: Feel.PALETTE.GOLD,
+        });
+      }
     }
-    if (run.score === 10) showToast("Rookie", 1.2);
-    else if (run.score === 15 || run.score === 30) showToast("Heat up", 0.4);
-    else if (run.score === 25) showToast("Squad", 1.2);
-    else if (run.score === 50) showToast("Legend", 1.2);
+    const marks = C.MILESTONES;
+    for (let m = 0; m < marks.length; m++) {
+      if (run.score === marks[m]) showToast("Score " + marks[m], 1.2);
+    }
+    if (run.score === 15 || run.score === 30) showToast("Heat up", 0.4);
   }
 
   function emitTrail(player, dt) {
@@ -470,6 +520,7 @@
 
   function onDie(kind) {
     state = OVER;
+    dieAt = time;
     deathFreeze = C.DEATH_FREEZE;
     lock = C.DEATH_FREEZE + C.DEATH_BEAT;
     settle = 3.5;
@@ -484,10 +535,12 @@
     const scored = run.score || 0;
     const skim = run.skim || 0;
     Meta.noteDeath(scored);
+    Meta.noteSkim(skim);
     banked = scored + skim;
     Meta.addCoins(banked);
-    jobClaim = jobCompletedThisRun();
-    if (jobsProgressed() && !jobClaim) showToast("Challenge +1", 1.4, true);
+    const clean = run.unfair ? 0 : Meta.noteCleanFlight(scored);
+    if (jobsProgressed()) showToast(Feel.COPY.CHALLENGE_PLUS, 1.5, true);
+    if (clean) showToast(Feel.COPY.CLEAN + " +" + clean, 1.2);
     popCoins(0.3);
     Sfx.crash();
     if (newBest) Sfx.fanfare();
@@ -499,13 +552,13 @@
         y: run.player.y + (Math.random() - 0.5) * 12,
         vx: (Math.random() - 0.5) * 36,
         vy: -16 - Math.random() * 60,
-        life: 0.26 + Math.random() * 0.12,
-        max: 0.4,
-        size: 2.2 + Math.random() * 2.4,
+        life: 0.12 + Math.random() * 0.08,
+        max: 0.2,
+        size: 2.2 + Math.random() * 2.2,
         front: true,
         scroll: false,
         grav: -30,
-        color: i % 5 === 0 ? Feel.PALETTE.HAD_HI : Feel.PALETTE.ASH,
+        color: i % 2 ? "#8FA396" : "#5E6B64",
       });
     }
   }
@@ -525,6 +578,15 @@
     reveal = null;
   }
 
+  function beginReveal(result) {
+    if (result.coinsGrant) {
+      reveal = { phase: "card", life: 0, result: result };
+      popCoins(0.35);
+      return;
+    }
+    reveal = { phase: "lid", life: C.REVEAL_LID, result: result };
+  }
+
   function onOpenChest(id) {
     if (reveal) return;
     const result = Meta.open(id);
@@ -534,7 +596,15 @@
     }
     if (!result.ok) return;
     Sfx.score();
-    reveal = { life: 0.6, result: result };
+    beginReveal(result);
+  }
+
+  function onOpenFree() {
+    if (reveal) return;
+    const result = Meta.openFree();
+    if (!result.ok) return;
+    Sfx.score();
+    beginReveal(result);
   }
 
   function onCollectionCard(id) {
@@ -549,7 +619,13 @@
     if (chestWhisper > 0) chestWhisper = Math.max(0, chestWhisper - dt);
     if (coinPop > 0) coinPop = Math.max(0, coinPop - dt / (coinPopDur || 0.4));
     if (reveal && reveal.life > 0) reveal.life = Math.max(0, reveal.life - dt);
-    if (skimFlash && skimFlash.a > 0) skimFlash.a = Math.max(0, skimFlash.a - dt / 0.1);
+    if (reveal && reveal.life <= 0 && reveal.phase === "lid") {
+      reveal.phase = "flash";
+      reveal.life = C.REVEAL_FLASH;
+    } else if (reveal && reveal.life <= 0 && reveal.phase === "flash") {
+      reveal.phase = "card";
+    }
+    if (skimFlash && skimFlash.a > 0) skimFlash.a = Math.max(0, skimFlash.a - dt / 0.18);
     if (toasts.length && !overlay) {
       toasts[0].life -= dt;
       if (toasts[0].life <= 0) toasts.shift();
@@ -580,7 +656,7 @@
       const f = floaters[i];
       f.life -= dt;
       f.y += f.vy * dt;
-      f.x -= shift;
+      if (f.scroll !== false) f.x -= shift;
       if (f.life <= 0) floaters.splice(i, 1);
     }
     if (settleLife > 0) {
@@ -606,6 +682,10 @@
       if (deathFreeze > 0) deathFreeze -= dt;
       else if (run) P.stepPlayer(run.player, dt, false, true);
       lock -= dt;
+      if (newBest && deathFreeze <= 0 && !deathFeather) {
+        deathFeather = true;
+        burstFeathers(P.W / 2, 300, true);
+      }
       if (lock <= 0 && flapQueued) startPlaying();
     }
     if (state === PLAYING && run) {
@@ -663,7 +743,7 @@
     if (settleLife > 0) ctx.translate(0, settle * (settleLife / 0.12));
     const player = state === TITLE || !run ? titlePose(time) : run.player;
     player.skin = skin;
-    player.ash = state === OVER && flash <= 0;
+    player.ash = state === OVER && dieAt >= 0 ? Math.min(1, Math.max(0, (time - dieAt) / 0.2)) : 0;
     Draw.drawBackground(ctx, scroll, time);
     Draw.drawParticles(ctx, particles, false);
     if (state === TITLE) Draw.drawHomeWorld(ctx, scroll, time);
@@ -696,10 +776,9 @@
         score: run.score,
         best: best,
         newBest: newBest,
-        rank: rankFor(run.score),
         ready: ready,
         banked: banked,
-        jobClaim: jobClaim,
+        jobClaim: claimReady(),
       });
       if (!overlay) Draw.drawMenu(ctx, "over", claimReady());
     }
@@ -708,8 +787,22 @@
     Draw.drawWhite(ctx, whiteFlash);
     Draw.drawVignette(ctx);
     if (overlay === "chests") {
-      Draw.drawChests(ctx, { coins: Meta.coins(), time: time, whisper: chestWhisper > 0 });
-      if (reveal) Draw.drawReveal(ctx, { result: reveal.result, life: reveal.life, time: time });
+      Draw.drawChests(ctx, {
+        coins: Meta.coins(),
+        time: time,
+        whisper: chestWhisper > 0,
+        pityText: function (id) { return Meta.pityText(id); },
+        freeReady: Meta.freeReady(),
+        freeLabel: Meta.freeLabel(),
+      });
+      if (reveal) {
+        Draw.drawReveal(ctx, {
+          result: reveal.result,
+          life: reveal.life,
+          phase: reveal.phase,
+          time: time,
+        });
+      }
     } else if (overlay === "collection") {
       Draw.drawCollectionPanel(ctx, {
         skin: skin,
@@ -764,8 +857,11 @@
     const pt = toGame(e);
     pointer = pt;
     if (overlay === "chests" && reveal) {
-      const hit = Draw.revealHit(pt, reveal.life);
-      if (hit.action === "skip") reveal.life = 0;
+      const hit = Draw.revealHit(pt, reveal);
+      if (hit.action === "skip") {
+        reveal.phase = "card";
+        reveal.life = 0;
+      }
       else if (hit.action === "equip") finishReveal(true);
       else finishReveal(false);
       return;
@@ -773,6 +869,7 @@
     if (overlay === "chests") {
       const hit = Draw.chestHit(pt);
       if (hit && hit.action === "open") onOpenChest(hit.id);
+      else if (hit && hit.action === "free") onOpenFree();
       else if (hit && hit.action === "close") overlay = null;
       return;
     }
@@ -814,7 +911,7 @@
       }
     }
     if (state === OVER && deathFreeze <= 0) {
-      if (Draw.stashHit(pt, jobClaim) === "challenges") {
+      if (Draw.stashHit(pt, claimReady()) === "challenges") {
         overlay = "challenges";
         return;
       }
@@ -914,8 +1011,15 @@
         }, 260);
       }
       if (kit) {
-        showToast("Full flock", 1.5);
+        showToast(Feel.COPY.FULL_FLOCK, 1.5);
         popCoins();
+      }
+      const ranks = Meta.claimRanks(best);
+      if (ranks.length === 1) showToast(ranks[0].title + " +" + ranks[0].gift, 1.2);
+      else if (ranks.length > 1) {
+        let sum = 0;
+        for (let i = 0; i < ranks.length; i++) sum += ranks[i].gift;
+        showToast(ranks[0].title + " → " + ranks[ranks.length - 1].title + " +" + sum, 1.2);
       }
       showStreak();
       requestAnimationFrame(frame);

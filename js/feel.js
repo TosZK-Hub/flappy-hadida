@@ -29,7 +29,16 @@
     /* Draw-only flap squash. Peak is sx 0.88 / sy 1.12 for 70–90ms. */
     FLAP_SQUASH_MS: 20,
     SKIM_PX: 6,
-    SKIM_CAP: 5,
+    /* Near-miss coins. Cap is +8 per run (evolution). Detection stays ≤6px. */
+    SKIM_CAP: 8,
+    /* Score loop. Gravity / flap / max fall above stay 1450 / −440 / 540. */
+    CLEAN_FLIGHT_SCORE: 15,
+    CLEAN_FLIGHT_COINS: 25,
+    MILESTONES: [10, 25, 50, 100],
+    REVEAL_LID: 0.6,
+    REVEAL_FLASH: 0.4,
+    FEATHER_LIFE: 0.2,
+    FREE_CHEST_COINS: 50,
 
     /* Teach band holds these. Later bands live in feelAt(). */
     SCROLL_START: 165,
@@ -63,6 +72,8 @@
     IRI_TEAL: "#2A9A8A",
     CHEEK: "#F5F0E8",
     BILL: "#3A3A40",
+    BILL_HI: "#C8C8D0",
+    BILL_TIP: "#1A1A20",
     BOK_GREEN: "#007A4D",
     BOK_GOLD: "#FFB81C",
     SKY_SA: "#4EB8E8",
@@ -253,12 +264,33 @@
     return "protea_column";
   }
 
+  /* Cosmetic ladder. Gifts are one-time and never gate PLAY or chests. */
+  const RANKS = [
+    { id: "chick", best: 5, title: "Chick", gift: 15 },
+    { id: "rookie", best: 15, title: "Rookie", gift: 25 },
+    { id: "squad", best: 30, title: "Squad", gift: 40 },
+    { id: "legend", best: 50, title: "Legend", gift: 75 },
+    { id: "ace", best: 75, title: "Flock Ace", gift: 100 },
+    { id: "king", best: 100, title: "Hadida King", gift: 150 },
+  ];
+
+  const COPY = {
+    TAGLINE: "One flap. Haa-haa energy.",
+    BROKE: "Earn coins on runs",
+    CLEAN: "Clean flight",
+    NEW_BEST: "New best",
+    CHALLENGE_PLUS: "Challenge +1",
+    CLAIM_READY: "Challenge claim ready",
+    FULL_FLOCK: "Full flock",
+  };
+
   function rankTitle(best) {
     const n = best > 0 ? best : 0;
-    if (n >= 50) return "Legend";
-    if (n >= 25) return "Squad";
-    if (n >= 10) return "Rookie";
-    return "";
+    let title = "";
+    for (let i = 0; i < RANKS.length; i++) {
+      if (n >= RANKS[i].best) title = RANKS[i].title;
+    }
+    return title;
   }
 
   return {
@@ -269,6 +301,8 @@
     CHESTS: CHESTS,
     RARITY_NAME: RARITY_NAME,
     RARITY_RANK: RARITY_RANK,
+    RANKS: RANKS,
+    COPY: COPY,
     PICKUPS: [],
     clamp: clamp,
     lerp: lerp,
